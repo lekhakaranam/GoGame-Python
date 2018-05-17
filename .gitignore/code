@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+
+import sys
+
+def contained(c, L):
+    'return True iff the coordinates c are in the special items of L'
+    for item in L:
+        if c == item[1]:
+            return True
+    return False
+
+def lookup(c, L):
+    'return the index of c in L'
+    for item in L:
+        if c == item[1]:
+            return item
+
+def h(here, there, cost):
+    'return city distance from here to there'
+    return cost * (abs(here[0] - there[0]) + abs(here[1] - there[1]))
+
+def initGrid(rows, columns, barriers, start = (0,0), end = None, cost = 10):
+    if not ((0 <= start[0] < rows) and (0 <= start[1] < columns)):
+        print('check your start coordinate!', file = sys.stderr)
+        return
+    if end is None:
+        end = (rows - 1, columns - 1)
+    elif not ((0 <= end[0] < rows) and (0 <= end[1] < columns)):
+        print('Your end position is off grid', file = sys.stderr)
+        return
+    open_list = [(0, start, start)] # (cost, location, parent)
+    closed_list = []
+    while 0 < len(open_list):
+        open_list.sort(key = lambda here, there = end, cost = cost: here[0] + h(here[1], end, cost), reverse = True)
+        print(open_list)
+        print(closed_list)
+        print('')
+        trial = open_list.pop()
+        coords = trial[1]
+        if coords == end:
+            break
+        closed_list.append(trial)
+        if coords[0] + 1 < rows:
+            child = coords[0] + 1, coords[1]
+            if (not contained(child, closed_list)) and (child not in barriers):
+                open_list.append((trial[0]+cost, child, coords))
+        if 0 <= coords[0] - 1:
+            child = coords[0] - 1, coords[1]
+            if (not contained(child, closed_list)) and (child not in barriers):
+                open_list.append((trial[0]+cost, child, coords))
+        if coords[1] + 1 < columns:
+            child = coords[0], coords[1] + 1
+            if (not contained(child, closed_list)) and (child not in barriers):
+                open_list.append((trial[0]+cost, child, coords))
+        if 0 <= coords[1] - 1:
+            child = coords[0], coords[1] - 1
+            if (not contained(child, closed_list)) and (child not in barriers):
+                open_list.append((trial[0]+cost, child, coords))
+    if coords != end:
+        print('Blocked!')
+        return None
+    path = []
+    follow = trial
+    while follow[1] != follow[2]:
+        path.append(follow[1])
+        follow = lookup(follow[2], closed_list)
+    path.append(start)
+    return tuple(reversed(path))
+
+if __name__ == '__main__':
+    barriers = ((1,0),(1,1),(3,1),(4,1),(5,1),(3,2),(2,3),(4,4),(0,5),(1,5),(3,5))
+    print(initGrid(6,6, barriers))
